@@ -1,0 +1,182 @@
+---
+title: "DATA607 Assignment 10"
+output: html_document
+date: "2025-10-24"
+author: "Mehreen Ali Gillani"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+####  Step 1: import libraries
+```{r}
+library(tidyverse)
+library(knitr)
+```
+
+####  Step 2: Get csv file
+```{r}
+url ='https://raw.githubusercontent.com/mehreengillani/DATA607/refs/heads/main/NY-House-Dataset.csv'
+data <- read.csv(url)
+#data summary
+summary(data)
+#Data structure
+str(data)
+
+```
+
+####  Step 3: Data wrangling 
+####  (a) Chossing relevant columns using select
+
+```{r}
+library(knitr)
+library(kableExtra)
+
+properties_clean <- data %>%
+  select(BROKERTITLE, TYPE, PRICE, BEDS, BATH, PROPERTYSQFT, SUBLOCALITY)
+
+properties_clean %>%
+  head() %>%  # You were missing this to show only the first few rows
+  kable(
+    digits = 2,
+    col.names = c("Broker", "Type", "Price", "Beds", "Bath", "Property SqFt", "Sublocality"),
+    caption = "NYC Real Estate Analysis"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  ) %>%
+  add_header_above(c("Broker Info" = 2, "Property Details" = 3, "Location" = 2))
+```
+
+####  (b) mutate(): Creating New Variables
+
+```{r}
+properties_clean <- properties_clean %>%
+  mutate(
+    # Create Price per SqFt, handling missing values
+    PRICE_SQFT = PRICE / PROPERTYSQFT,
+    # Extract the broker name (everything after "Brokered by ")
+    BROKER_NAME = str_remove(BROKERTITLE, "Brokered by "),
+    # Clean the SUBLOCALITY to get the borough
+    BOROUGH = case_when(
+      SUBLOCALITY == "New York County" ~ "Manhattan",
+      SUBLOCALITY == "Richmond County" ~ "Staten Island",
+      SUBLOCALITY == "Queens County" ~ "Queens",
+      SUBLOCALITY == "Kings County" ~ "Brooklyn",
+      SUBLOCALITY == "Bronx County" ~ "The Bronx",
+      TRUE ~ SUBLOCALITY # Keep the original if it doesn't match
+    )
+  )
+properties_clean %>%
+  select(BOROUGH, BROKER_NAME, PRICE_SQFT) %>%
+  head() %>%
+  kable()
+```
+
+
+####  (c) filter() Focusing on Specific Data:
+
+
+```{r}
+properties_clean <- properties_clean %>%
+  filter(
+    !is.na(PRICE_SQFT),         # Remove rows where calculation was NA
+    PRICE_SQFT > 100,           # Filter out extremely low PPSF
+    PRICE_SQFT < 10000,         # Filter out extremely high PPSF
+    PROPERTYSQFT > 100,         # Remove tiny "properties"
+    BEDS <= 10,                 # Focus on typical bedroom counts
+    BOROUGH %in% c("Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island")
+  )
+properties_clean %>%
+  select(BOROUGH, BROKER_NAME, BEDS, PRICE_SQFT) %>%
+  head() %>%
+  kable()
+```
+
+####  Step 4: Exploratory Data Analysis
+
+####  (a) group_by() and summarize(): Comparing Property Types
+Let's calculate the average price and price per square foot for different property types.
+
+```{r}
+price_by_type <- properties_clean %>%
+  group_by(TYPE) %>%
+  summarize(
+    count = n(), # Number of listings per type
+    avg_price = mean(PRICE, na.rm = TRUE),
+    avg_psf = mean(PRICE_SQFT, na.rm = TRUE),
+    median_psf = median(PRICE_SQFT, na.rm = TRUE)
+  ) %>%
+  arrange(desc(avg_psf)) # Sort from highest to lowest PPSF
+
+kable(price_by_type)
+```
+
+####  (b) group_by() and summarize(): Broker Performance
+Which brokers are dealing with the luxury market? Let's find the top 5 brokers by their maximum listing price.
+
+```{r}
+
+top_luxury_brokers <- properties_clean %>%
+  group_by(BROKER_NAME) %>%
+  summarize(highest_listing = max(PRICE, na.rm = TRUE)) %>%
+  arrange(desc(highest_listing)) %>%
+  head(5) # Get the top 5
+
+kable(top_luxury_brokers)
+```
+
+####  (c) count() and arrange(): Market Presence by Borough
+Let's see which borough has the most listings and how bedroom counts are distributed.
+
+```{r}
+
+# Count listings per borough
+listings_by_borough <- properties_clean %>%
+  count(BOROUGH, sort = TRUE)
+
+print(listings_by_borough)
+
+# See the distribution of bedrooms in Manhattan vs. Brooklyn
+bedroom_distribution <- properties_clean %>%
+  filter(BOROUGH %in% c("Manhattan", "Brooklyn")) %>%
+  count(BOROUGH, BEDS) %>%
+  arrange(BOROUGH, BEDS)
+
+kable(bedroom_distribution, n = 20) # Print more rows to see the pattern
+```
+####  Step 5: Creating an Analytical view
+
+```{r}
+# Create a summary table for a dashboard
+borough_summary_table <- properties_clean %>%
+  group_by(BOROUGH, TYPE) %>%
+  summarize(
+    number_of_listings = n(),
+    avg_price = round(mean(PRICE), 0),
+    median_psf = round(median(PRICE_SQFT), 0),
+    avg_beds = round(mean(BEDS), 1),
+    .groups = 'drop' # This drops the grouping structure after summaries
+  ) %>%
+  arrange(BOROUGH, desc(median_psf))
+
+# View the final, insightful table
+kable(borough_summary_table, n = 15)
+
+```
+
+
+
+#### Conclusion
+
+In this vignette, we used dplyr's powerful verbs to:
+
+  * select() the columns we needed. <br>
+  * mutate() new, more meaningful variables like PRICE_SQFT and BOROUGH.<br>
+  * filter() out noise and outliers to focus on a clean analysis dataset. <br>
+  * group_by() and summarize() to calculate key metrics by property type, broker, and borough. <br>
+  * arrange() and count() to quickly understand distributions and rankings. <br>
+  
+The result is a clear, actionable understanding of the NYC real estate market from a raw, complex dataframe, demonstrating how tidyverse is an indispensable tool for data analysis.
