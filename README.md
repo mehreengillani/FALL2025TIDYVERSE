@@ -89,7 +89,9 @@ R file link: https://raw.githubusercontent.com/mehreengillani/FALL2025TIDYVERSE/
 Dataset link: https://raw.githubusercontent.com/mehreengillani/DATA607/refs/heads/main/NY-House-Dataset.csv
 
 * Revision/Addition Description and Link:
-
+* Beverage Preference Analysis: Identifies which drink dominates each country's alcohol consumption and finds countries where one beverage type makes up over 70% of total servings.
+Faceted Visualization: Provides a clearer comparison by showing the top countries for each beverage type separately, revealing different geographic patterns for beer, spirits, and wine consumption.
+https://github.com/sachikapoor99-byte/FALL2025TIDYVERSE/pull/1/commits/9368829e876990c13b556f270ab8cc9a8cb50dcd
 # Pascal Hermann K.
 
 * Initial Description and Link:
