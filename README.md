@@ -85,6 +85,8 @@ Revision/Addition Description and Link:
 # Mehreen Ali G.
 
 * Initial Description and Link:
+R file link: https://raw.githubusercontent.com/mehreengillani/FALL2025TIDYVERSE/refs/heads/main/Assignment10_Mehreen.Rmd
+Dataset link: https://raw.githubusercontent.com/mehreengillani/DATA607/refs/heads/main/NY-House-Dataset.csv
 
 * Revision/Addition Description and Link:
 
